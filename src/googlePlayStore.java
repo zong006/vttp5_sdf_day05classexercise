@@ -14,49 +14,48 @@ public class googlePlayStore {
         String filePath = currDir + File.separator + "data" + File.separator + fileName;
 
         File f = new File(filePath);
+        Map<String, Map<String, Float>> categoryInfo = new HashMap<>(); 
 
-        FileReader fr = new FileReader(f);
-        BufferedReader br = new BufferedReader(fr);
-        String lineRead = "";
+        try (FileReader fr = new FileReader(f)) {
+            try (BufferedReader br = new BufferedReader(fr)) {
+                String lineRead = "";
+                                       
+                int count = 0;
+                while ((lineRead = br.readLine())!=null){
+                    
+                    if (count >0){
+                        
+                        // https://stackoverflow.com/questions/1757065/java-splitting-a-comma-separated-string-but-ignoring-commas-in-quotes
+                        String[] rowEntry = lineRead.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
 
-        Map<String, Map<String, Float>> categoryInfo = new HashMap<>();
-        // float avgRating;
-        // String highestRatedApp;
-        // String lowestRatedApp;
-        // int totalNumOfApps;
-        // int numDiscardedRec;
-        
-        int count = 0;
-        while ((lineRead = br.readLine())!=null){
-            
-            if (count >0){
-                
-                // https://stackoverflow.com/questions/1757065/java-splitting-a-comma-separated-string-but-ignoring-commas-in-quotes
-                String[] rowEntry = lineRead.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+                        String category = rowEntry[1].toUpperCase();
+                        String appName = rowEntry[0];
+                        Float rating = 0f;
+                        // https://stackoverflow.com/questions/24833364/how-to-check-a-string-contains-only-digits-and-decimal-points
+                        if (rowEntry[2].matches("[0-9.]*")){
+                            rating = Float.parseFloat(rowEntry[2]);
+                        }
+                        else{
+                            rating = Float.parseFloat("NaN");
+                        }
+                        
+                        
+                        Map<String, Float> appInfo = new HashMap<>();
 
-                String category = rowEntry[1].toUpperCase();
-                String appName = rowEntry[0];
-                Float rating = 0f;
-                // https://stackoverflow.com/questions/24833364/how-to-check-a-string-contains-only-digits-and-decimal-points
-                if (rowEntry[2].matches("[0-9.]*")){
-                    rating = Float.parseFloat(rowEntry[2]);
+                        if (categoryInfo.containsKey(category)){
+                            appInfo = categoryInfo.get(category);
+                        }
+                        appInfo.put(appName, rating);
+                        categoryInfo.put(category, appInfo);
+                    }
+                    count ++;
                 }
-                else{
-                    rating = Float.parseFloat("NaN");
-                }
                 
-                
-                Map<String, Float> appInfo = new HashMap<>();
-
-                if (categoryInfo.containsKey(category)){
-                    appInfo = categoryInfo.get(category);
-                }
-                appInfo.put(appName, rating);
-                categoryInfo.put(category, appInfo);
+            } catch (NumberFormatException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             }
-            count ++;
         }
-        System.out.println(categoryInfo.keySet());
 
         for (String category : categoryInfo.keySet()){
             System.out.printf("Category: %s \n", category);
@@ -66,7 +65,7 @@ public class googlePlayStore {
             String[] lowestRatedAppInfo = findLowestRatedApp(appInfo);
             float avgRating = calcAvgRating(appInfo);
             int[] counts = countApp(appInfo);
-    
+
             System.out.printf("     Higest:     %s,     %s\n", highestRatedAppInfo[0], highestRatedAppInfo[1]);
             System.out.printf("     Lowest:     %s,     %s\n", lowestRatedAppInfo[0], lowestRatedAppInfo[1]);
             System.out.printf("     Average Rating:     %.2f\n", avgRating);
